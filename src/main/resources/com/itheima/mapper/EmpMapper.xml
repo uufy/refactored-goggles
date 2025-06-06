@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itheima.mapper.EmpMapper">
+    <update id="updateById">
+<!--根据员工ID修改基本员工信息，动态sql-->
+        update emp
+        <set >
+            <if test="username != null and username != '' ">username = #{username},</if>
+            <if test="password != null and password != ''">password = #{password},</if>
+            <if test="name != null and name != ''">
+                name = #{name},
+            </if>
+            <if test="gender != null">
+                gender = #{gender},
+            </if>
+            <if test="phone != null and phone != ''">
+                phone = #{phone},
+            </if>
+            <if test="job != null">
+                job = #{job},
+            </if>
+            <if test="salary != null">
+                salary = #{salary},
+            </if>
+            <if test="image != null">
+                image = #{image},
+            </if>
+            <if test="entryDate != null">
+                entry_date = #{entryDate},
+            </if>
+            <if test="deptId != null">
+                dept_id = #{deptId},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="list" resultType="com.itheima.pojo.Emp">
+
+        select emp.*,dept.name deptName from emp left outer join dept on emp.dept_id = dept.id
+        <where>
+        <if test="name != null and name != ''">
+            emp.name like CONCAT('%',#{name},'%')
+        </if>
+        <if test="gender !=null">
+            and emp.gender = #{gender}
+        </if>
+        <if test="begin !=null and end !=null">
+            and emp.entry_date between #{begin} and #{end}
+        </if>
+        </where>
+        order by emp.update_time desc
+    </select>
+
+
+    <resultMap id="empResultMap" type="com.itheima.pojo.Emp">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="name" column="name"/>
+        <result property="gender" column="gender"/>
+        <result property="phone" column="phone"/>
+        <result property="job" column="job"/>
+        <result property="salary" column="salary"/>
+        <result property="image" column="image"/>
+        <result property="entryDate" column="entry_date"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+
+<!--        封装工作经历-->
+
+        <collection property="exprList" ofType="com.itheima.pojo.EmpExpr">
+            <id  property="id" column="ee_id"/>
+            <result property="empId" column="ee_empid"/>
+            <result property="begin" column="ee_begin"/>
+            <result property="end" column="ee_end"/>
+            <result property="company" column="ee_company"/>
+            <result property="job" column="ee_job"/>
+
+
+
+
+        </collection>
+
+    </resultMap>
+
+
+<!--根据id查询信息和工作经历-->
+    <select id="getById" resultMap = "empResultMap">
+        select
+        e.*,
+        ee.id ee_id,
+        ee.emp_id ee_empid,
+        ee.begin ee_begin,
+        ee.end ee_end,
+        ee.company ee_company,
+        ee.job ee_job
+        from emp e left join emp_expr ee on e.id = ee.emp_id
+        where e.id=#{id} ;
+    </select>
+<!--    统计员工职位人数-->
+    <select id="countEmpJobData" resultType="java.util.Map">
+        select
+        (case  job when 1 then '班主任'
+        when 2 then '讲师'
+        when 3 then '学工主管'
+        when 4 then '教研主管'
+        when 5 then '咨询师'
+        else '其他' end) pos ,
+        count(*) num
+        from emp group by job order by num
+    </select>
+    <select id="countEmpGenderData" resultType="java.util.Map">
+        select
+        if(gender = 1,'男性员工','女性员工') name
+        ,COUNT(*) value
+        from emp group by gender;
+
+    </select>
+
+    <delete id="deleteByIds">
+        delete from emp where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+
+    </delete>
+
+</mapper>
